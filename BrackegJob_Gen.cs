@@ -33,6 +33,7 @@ public class BrackegJob_Gen : MonoBehaviour
 
 
         public int TriangleCount =>(xsize *zsize) * 6 ;
+        public int MeshIteration_count =>(xsize * zsize) ;
         public int VertexCount => (xsize +1) * (zsize +1) ;
     }
 
@@ -42,7 +43,7 @@ public class BrackegJob_Gen : MonoBehaviour
     {
 
         GenerateNewMesh Meshjob = new GenerateNewMesh(Meshdata);
-        Meshjob.Schedule((Meshdata.xsize * Meshdata.zsize), 1000).Complete();
+        Meshjob.Schedule(Meshdata.MeshIteration_count, 1000).Complete();
 
         vertices = Meshjob.GetVerts();
         Mesh.mesh = Meshjob.GetMesh();
@@ -66,24 +67,26 @@ public class BrackegJob_Gen : MonoBehaviour
     }*/
 
 
+    //todo  Divide the x and y variables so that the mesh doesn't increase in size based on count of verts
     public struct GenerateNewMesh : IJobParallelFor
     {
         [NativeDisableParallelForRestriction]private NativeArray<Vector3> Verticies; // stores vertices;
         [NativeDisableParallelForRestriction]private NativeArray<int> Triangles;
+        [NativeDisableParallelForRestriction]private NativeArray<Vector2> uvs;
         private readonly TestMeshData meshdata;
 
         public GenerateNewMesh(TestMeshData data)
         {
             Verticies = new NativeArray<Vector3>(data.VertexCount,Allocator.TempJob);
             Triangles = new NativeArray<int>(data.TriangleCount,Allocator.TempJob);
+            uvs = new NativeArray<Vector2>(data.VertexCount,Allocator.TempJob);
             meshdata = data;
         }
 
         public void Execute(int index)
-        {
+        { 
             int y = index % meshdata.xsize;
             int x = index / meshdata.xsize;
-            
             
             //have to calculate all 4 indices;
             //calculate bottom left to top right
@@ -97,8 +100,6 @@ public class BrackegJob_Gen : MonoBehaviour
             //TopRight
             int Tr = Tl + 1;
             
-            
-            
             //xspacing = horizontal spacing between each point , increase this if using lod to remove points
             //zspacing = Vertical spacing between each point , increase this if using lod to remove points
 
@@ -107,15 +108,25 @@ public class BrackegJob_Gen : MonoBehaviour
             
             //Set vertices;
 
+            //bottom left vertices
             Verticies[Bl] = (new Vector3(x * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            //bottom right vertices
             Verticies[Br] = (new Vector3((x) * meshdata.XSpacing, 0, (y + 1) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            //top left vertices
             Verticies[Tl] = (new Vector3((x + 1) * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            //Top right vertices
             Verticies[Tr] = (new Vector3((x + 1) * meshdata.XSpacing, 0, (y + 1) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            
+            
+            uvs[Bl] = new Vector2((float)(x) / meshdata.xsize, (float)(y) / meshdata.zsize);
+            uvs[Br] = new Vector2((float)(x) / meshdata.xsize, (float)(y+1) / meshdata.zsize);
+            uvs[Tl] = new Vector2((float)(x+1) / meshdata.xsize, (float)(y) / meshdata.zsize);
+            uvs[Tr] = new Vector2((float)(x+1) / meshdata.xsize, (float)(y+1) / meshdata.zsize);
 
 
-            //triangle index = index *6
+           //triangle index = index *6
 
-            //triangle position =  0, 1, 2, 3 , 1 , 2 // 
+            //triangle position =  0, 1, 2, 1 , 3 , 2 // 
             // c - - - - d
             // |         |
             // |         |
@@ -123,7 +134,6 @@ public class BrackegJob_Gen : MonoBehaviour
             // a - - - - b
             // a is bottom left and the rest of the points are calculated using the index of a
             // we are only looping through each square to calculate the triangle and other bs
-
             
             //starts from index 0 to resolution index
             Triangles[index * 6 ] = Bl;
@@ -144,6 +154,7 @@ public class BrackegJob_Gen : MonoBehaviour
         {
             Verticies.Dispose();
             Triangles.Dispose();
+            uvs.Dispose();
         }
 
         public Mesh GetMesh()
@@ -152,6 +163,7 @@ public class BrackegJob_Gen : MonoBehaviour
 
             m.SetVertices(Verticies);
             m.triangles = Triangles.ToArray();
+            m.uv = uvs.ToArray();
             m.RecalculateBounds();
             m.RecalculateNormals();
 
