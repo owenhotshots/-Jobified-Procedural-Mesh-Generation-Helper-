@@ -19,12 +19,17 @@ public class BrackegJob_Gen : MonoBehaviour
     [Serializable]
     public struct TestMeshData
     {
-        [Range(1,256)]
-        public int setxsize, setzsize; // xsize =  amount of quads on x axis, zsize =  amount of quads on z axis
-        public int xsize => setxsize;
-        public int zsize => setzsize;
+        [Range(1,255)]
+        [SerializeField]private int setxsize, setzsize; // xsize =  amount of quads on x axis, zsize =  amount of quads on z axis
+        public int xsize => setxsize-1;
+        public int zsize => setzsize-1;
         public float XSpacing;
         public float ZSpacing;
+        
+        [Range(0,100)]
+        public float width;
+
+        public float TileLength =>  width / xsize ;
 
 
         public int TriangleCount =>(xsize *zsize) * 6 ;
@@ -46,7 +51,12 @@ public class BrackegJob_Gen : MonoBehaviour
 
     }
 
-  /*  private void OnDrawGizmos()
+    private void OnValidate()
+    {
+   //     Startupdate();
+    }
+
+    /*  private void OnDrawGizmos()
     {
         if(vertices == null) return;
         for (int i = 0; i < vertices.Length; i++)
@@ -97,10 +107,10 @@ public class BrackegJob_Gen : MonoBehaviour
             
             //Set vertices;
 
-            Verticies[Bl] = new Vector3(x * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset;
-            Verticies[Br] = new Vector3((x) * meshdata.XSpacing, 0, (y+1) * meshdata.ZSpacing) - CenterOffset;
-            Verticies[Tl] = new Vector3((x+1) * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset;
-            Verticies[Tr] = new Vector3((x+1) * meshdata.XSpacing, 0, (y+1) * meshdata.ZSpacing) - CenterOffset;
+            Verticies[Bl] = (new Vector3(x * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            Verticies[Br] = (new Vector3((x) * meshdata.XSpacing, 0, (y + 1) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            Verticies[Tl] = (new Vector3((x + 1) * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
+            Verticies[Tr] = (new Vector3((x + 1) * meshdata.XSpacing, 0, (y + 1) * meshdata.ZSpacing) - CenterOffset) * meshdata.TileLength;
 
 
             //triangle index = index *6
