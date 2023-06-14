@@ -19,6 +19,7 @@ public class BrackegJob_Gen : MonoBehaviour
     [Serializable]
     public struct TestMeshData
     {
+        [Range(1,256)]
         public int setxsize, setzsize; // xsize =  amount of quads on x axis, zsize =  amount of quads on z axis
         public int xsize => setxsize;
         public int zsize => setzsize;
@@ -45,14 +46,14 @@ public class BrackegJob_Gen : MonoBehaviour
 
     }
 
-    private void OnDrawGizmos()
+  /*  private void OnDrawGizmos()
     {
         if(vertices == null) return;
         for (int i = 0; i < vertices.Length; i++)
         {
             Gizmos.DrawSphere(transform.position + vertices[i],0.15f);
         }
-    }
+    }*/
 
 
     public struct GenerateNewMesh : IJobParallelFor
@@ -87,15 +88,19 @@ public class BrackegJob_Gen : MonoBehaviour
             int Tr = Tl + 1;
             
             
+            
             //xspacing = horizontal spacing between each point , increase this if using lod to remove points
             //zspacing = Vertical spacing between each point , increase this if using lod to remove points
+
+            Vector3 CenterOffset = new Vector3((meshdata.xsize * meshdata.XSpacing) / 2f, 0f, (meshdata.zsize * meshdata.ZSpacing) / 2f);
+            
             
             //Set vertices;
 
-            Verticies[Bl] = new Vector3(x * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing);
-            Verticies[Br] = new Vector3((x) * meshdata.XSpacing, 0, (y+1) * meshdata.ZSpacing);
-            Verticies[Tl] = new Vector3((x+1) * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing);
-            Verticies[Tr] = new Vector3((x+1) * meshdata.XSpacing, 0, (y+1) * meshdata.ZSpacing);
+            Verticies[Bl] = new Vector3(x * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset;
+            Verticies[Br] = new Vector3((x) * meshdata.XSpacing, 0, (y+1) * meshdata.ZSpacing) - CenterOffset;
+            Verticies[Tl] = new Vector3((x+1) * meshdata.XSpacing, 0, (y) * meshdata.ZSpacing) - CenterOffset;
+            Verticies[Tr] = new Vector3((x+1) * meshdata.XSpacing, 0, (y+1) * meshdata.ZSpacing) - CenterOffset;
 
 
             //triangle index = index *6
@@ -111,7 +116,7 @@ public class BrackegJob_Gen : MonoBehaviour
 
             
             //starts from index 0 to resolution index
-            Triangles[index * 6 + 0] = Bl;
+            Triangles[index * 6 ] = Bl;
             Triangles[index * 6 + 1] = Br;
             Triangles[index * 6 + 2] = Tl;
             Triangles[index * 6 + 3] = Br;
